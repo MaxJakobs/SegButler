@@ -1,14 +1,6 @@
 (* ::Package:: *)
 
 BeginPackage["SegButler`"]
-
-segment2DImage::usage="segment2DImage[img_,net_,minimumSize_,binThreshold_:.5,maxThreshold:.1,debug_:False] call on image to segment it real good"
-setnetevaluate::usage="setnetevaluate[set_,net_] Evaluate net over input set of images"
-segmentpmap::usage="segmentpmap[pmap_,binThreshold_,minimumSize_,maxThreshold_]"
-watershedSeparation2D::usage="watershed"
-watershedSeparation2DWithPmap::usage="watershed"
-watershedSeparation3DWithPmap::usage="watershed"
-watershedSeparation3D::usage="watershed"
 netevaluate::usage="evaluate net"
 netevaluateGradNet::usage="evaluate gradient net"
 segment2DImageGradientMap::usage="segment image with gradient map"
@@ -18,16 +10,28 @@ netevaluateSizeUP::usage="setnetevaluate[set_,net_] Evaluate net over input set 
 netevaluateSizeUPfcn::usage="setnetevaluate[set_,net_] Evaluate net over input set of images"
 segmentPmapWithGradients::usage=".."
 segment3DImageGradientMap::usage="segmentents 3D image"
-SegmentationButler::usage="segments a 2D image (top level function), Takes an input associaion"
+
+SegmentationButler::usage="segments a 2D image (top level function), Takes an input associaion:
+	Required Inputs:
+	image->Image to analyse
+	imgObjectSize-> size of objects in image
+	nets-><|size->net,sizeupt->net,..|>
+	Optional (Default):
+	smoothOutput-> False upsamples image before gradient ascend
+	binaryThreshold-> 0.5
+	unhinged-> False (no limits on size and computation time)"
+	
+loadSemiSuperNet::usage="loads semisuper net from file to be used by package"
 
 
 Begin["`Private`"]
 
 
-<<AugmentationFunctions`
+loadSemiSuperNet[mxFile_]:=NetReplacePart[NetExtract[Import[mxFile]["TrainedNet"],"stylenetLabeled"],
+	{"Input"->NetEncoder[{"Image",{256,256}}],"Binary"->{256,256,2},"horzGrad"->NetDecoder[{"Image","Grayscale"}],"vertGrad"->NetDecoder[{"Image","Grayscale"}]}]
 
 
-<<FCNAssemble`
+removeOutlierpixels[img_,lq_:.001,uq_:.999,rand_:False]:=ImageAdjust[img,0,{Quantile[img,lq],Quantile[img,uq]},{0,1}]
 
 
 netevaluate[img_,net_,targetDevice_:"CPU"]:=Module[{dim=ImageDimensions@img,fcn},
