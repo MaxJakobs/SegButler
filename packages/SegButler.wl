@@ -19,6 +19,7 @@ SegmentationButler::usage="segments a 2D image (top level function), Takes an in
 	Optional (Default):
 	smoothOutput-> False upsamples image before gradient ascend
 	binaryThreshold-> 0.5
+	morphoBinFac-> 1 factor for morphological binarisation, <1 useful if objects are not fully recognised
 	unhinged-> False (no limits on size and computation time)"
 	
 loadSemiSuperNet::usage="loads semisuper net from file to be used by package"
@@ -196,13 +197,14 @@ compileGradientAscentAlgo[gradMap_,mxiter_]:=Module[{getstep},
 	SparseArray@Round@Map[Max,Transpose[ImageData/@tmp,{3,1,2}],{2}]]*)
 
 
-segmentPmapWithGradients[img_,out_,objectsize_,binThreshold_:0.5,borderObjects_:True,debug_:False,upsample_:True]:=Module[{getstep,imgOriginalScale,mxiter,clusters,getcluster,findCenters,bin,lines,endpoints,gradMap,segmented,overlay,pixels,labels,overlaylabeled,dostep,step,return},
+segmentPmapWithGradients[img_,out_,objectsize_,binThreshold_:0.5,borderObjects_:True,debug_:False,upsample_:True,morphoBinfac_:1]:=Module[{getstep,imgOriginalScale,mxiter,clusters,getcluster,findCenters,bin,lines,endpoints,gradMap,segmented,overlay,pixels,labels,overlaylabeled,dostep,step,return},
 	
-	bin=ImagePad[MorphologicalBinarize[out["pmap"],{0.2*binThreshold,binThreshold}],2,Padding->0];
+	bin=ImagePad[MorphologicalBinarize[out["pmap"],{morphoBinfac*binThreshold,binThreshold}],2,Padding->0];
 	
 	gradMap=Transpose[ImageData/@{ImagePad[out["horzGrad"],2,Padding->0],
 								ImagePad[out["vertGrad"],2,Padding->0]},{3,1,2}];
 	
+	Sow@bin;
 	(*get pixels*)
 	Sow@First@AbsoluteTiming[
 	pixels=First/@Most[ArrayRules@ImageData@bin];];
@@ -222,6 +224,7 @@ segmentPmapWithGradients[img_,out_,objectsize_,binThreshold_:0.5,borderObjects_:
 	Sow@First@AbsoluteTiming[
 	getcluster=Nearest[Thread[Round/@Mean/@clusters->Range@Length@clusters]];
 	segmented=SparseArray[Thread[pixels->First/@getcluster/@endpoints],Reverse@ImageDimensions@bin];];
+	Sow@segmented;
 	(**********************************************************)
 	(*Delete Padding*)
 	segmented=ArrayPad[segmented,-2];
@@ -438,7 +441,8 @@ SegmentationButler[assoc_]:=Module[{originalDim,objSize,preferredObjectSize,imgR
 								If[KeyExistsQ[assoc,"binaryThreshold"],assoc["binaryThreshold"],.5],
 								If[KeyExistsQ[assoc,"includeBorderObjects"],assoc["includeBorderObjects"],True],
 								If[KeyExistsQ[assoc,"DEBUG"],assoc["DEBUG"],False],
-								If[KeyExistsQ[assoc,"upsample"],assoc["upsample"],True]]|>]]};
+								If[KeyExistsQ[assoc,"upsample"],assoc["upsample"],True],
+								If[KeyExistsQ[assoc,"morphoBinFac"],assoc["morphoBinFac"],1]]|>]]};
 		out]
 		,
 		Print@"not enough input given!";

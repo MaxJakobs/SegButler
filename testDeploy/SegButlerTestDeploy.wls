@@ -15,9 +15,6 @@ packages=FileNames["*.wl",FileNameJoin@{dir,"..","packages"}]
 Get/@packages;
 
 
-
-
-
 (* ::Section:: *)
 (*Tests*)
 
@@ -47,7 +44,7 @@ testOutput=<|"Cells"->SegmentationButler@<|"image"->testimg,"nets"->cellNets,"sm
 			"Nuclei"->SegmentationButler@<|"image"->testimg,"nets"->nucNets,"smoothOutput"->True,"DEBUG"->True|>|>;
 
 
-AppendTo[tests,VerificationTest[Max/@MorphologicalComponents/@testOutput[[;;,"objects"]],<|"Cells"->9,"Nuclei"->12|>]]
+AppendTo[tests,VerificationTest[Round/@Max/@Image/@testOutput[[;;,"objects"]],<|"Cells"->13,"Nuclei"->12|>]]
 
 
 (*Tetsing goes here*)
