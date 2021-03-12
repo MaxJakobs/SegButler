@@ -11,6 +11,11 @@ netevaluateSizeUPfcn::usage="setnetevaluate[set_,net_] Evaluate net over input s
 segmentPmapWithGradients::usage=".."
 segment3DImageGradientMap::usage="segmentents 3D image"
 
+SegButler3D::usage="segments 3D image (experimental)
+	Inputs:
+	threshold->bin threshold,\[IndentingNewLine]	targetDevice->GPU or CPU\[IndentingNewLine]	objSz->size of object in image\[IndentingNewLine]	modelSz-> size on which the model was trained\[IndentingNewLine]	model->neural network model"
+
+
 SegmentationButler::usage="segments a 2D image (top level function), Takes an input associaion:
 	Required Inputs:
 	image->Image to analyse
@@ -530,6 +535,38 @@ segment3DImageGradientMap[img3D_,net_,netobjectsize_,imgobjectsize_,threshold_:.
 		netevaluateGradNet3D[img3D,net,netobjectsize/imgobjectsize,td],
 		netobjectsize,threshold]
 
+
+
+SegButler3D[assoc_]:=Module[{},
+If[Not@KeyExistsQ[assoc,"threshold"],
+Print@"please provide threshold!";Abort[]];
+If[Not@KeyExistsQ[assoc,"targetDevice"],
+Print@"please provide targetDevice!";Abort[]];
+If[Not@KeyExistsQ[assoc,"objSz"],
+Print@"please provide objSz!";Abort[]];
+If[Not@KeyExistsQ[assoc,"modelSz"],
+Print@"please provide modelSz!";Abort[]];
+If[Not@KeyExistsQ[assoc,"model"],
+Print@"please provide model!";Abort[]];
+
+(*get rescaling factor*)
+zFac=If[Not@KeyExistsQ[assoc,"zFac"],
+Print@"trying to get zScaling from tif metadata...";
+metadata=Import[assoc["file"],"Exif"];
+If[Not@MissingQ@metadata["XResolution"],
+zspacing=ToExpression@StringTake[metadata["ImageDescription"],{Last@Last@StringPosition[metadata["ImageDescription"],"spacing"]+2,Last@Last@StringPosition[metadata["ImageDescription"],"spacing"]+7}];
+xspacing=N[1/metadata["XResolution"]];
+zspacing/xspacing,
+Print@"Failed Getting scale from metadata!";Abort[]
+]
+,assoc["zFac"]];
+(*resize image so that xy z same scale*)
+Print@"Rescaling 3D image...";
+
+img3D=ImageResize[Image3D[removeOutlierpixels@Image3D@Import@file,"Byte"],Scaled/@{1,1,zFac}];
+Print@"starting segmentation...";
+segment3DImageGradientMap[img3D,assoc["model"],assoc["modelSz"],assoc["objSz"],assoc["threshold"],assoc["targetDevice"]]
+]
 
 
 End[]
