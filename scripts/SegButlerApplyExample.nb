@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     12602,        339]
-NotebookOptionsPosition[     10121,        289]
-NotebookOutlinePosition[     10555,        306]
-CellTagsIndexPosition[     10512,        303]
+NotebookDataLength[     12857,        345]
+NotebookOptionsPosition[     10278,        294]
+NotebookOutlinePosition[     10716,        311]
+CellTagsIndexPosition[     10673,        308]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -284,11 +284,16 @@ Cell[BoxData["\<\"xz slice analysis...\"\>"], "Print",
   "During evaluation of \
 In[53]:=",ExpressionUUID->"9ec2e25b-23e0-4d40-afd4-b536e0431f66"]
 }, Open  ]]
-}, Open  ]]
+}, Open  ]],
+
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{{3.8257425347673817`*^9, 
+  3.825742537593948*^9}},ExpressionUUID->"a3182f7a-5ad4-4020-b49c-\
+4027fa7d98bb"]
 }, Open  ]]
 },
 WindowSize->{1068, 943},
-WindowMargins->{{53, Automatic}, {0, Automatic}},
+WindowMargins->{{20, Automatic}, {-1095, Automatic}},
 TaggingRules->{"TryRealOnly" -> False},
 FrontEndVersion->"12.1 for Mac OS X x86 (64-bit) (March 13, 2020)",
 StyleDefinitions->"Default.nb",
@@ -322,7 +327,7 @@ Cell[CellGroupData[{
 Cell[4297, 133, 151, 3, 54, "Subsection",ExpressionUUID->"0aa72a83-0914-4f47-831d-6bf1005bf405"],
 Cell[4451, 138, 492, 13, 30, "Input",ExpressionUUID->"0df4b030-40e9-4892-a629-088ef9e47506",
  InitializationCell->False],
-Cell[4946, 153, 983, 24, 73, "Input",ExpressionUUID->"3b0764c2-5a53-458a-a760-5f9a8835080f",
+Cell[4946, 153, 983, 24, 94, "Input",ExpressionUUID->"3b0764c2-5a53-458a-a760-5f9a8835080f",
  InitializationCell->False]
 }, Open  ]],
 Cell[CellGroupData[{
@@ -339,7 +344,8 @@ Cell[9003, 257, 348, 7, 24, "Print",ExpressionUUID->"4a774959-bf7f-461c-ac7c-071
 Cell[9354, 266, 379, 9, 24, "Print",ExpressionUUID->"ad89494e-908d-42f0-8503-5a641701abc6"],
 Cell[9736, 277, 345, 7, 24, "Print",ExpressionUUID->"9ec2e25b-23e0-4d40-afd4-b536e0431f66"]
 }, Open  ]]
-}, Open  ]]
+}, Open  ]],
+Cell[10108, 288, 154, 3, 30, "Input",ExpressionUUID->"a3182f7a-5ad4-4020-b49c-4027fa7d98bb"]
 }, Open  ]]
 }
 ]

@@ -542,6 +542,10 @@ If[Not@KeyExistsQ[assoc,"threshold"],
 Print@"please provide threshold!";Abort[]];
 If[Not@KeyExistsQ[assoc,"targetDevice"],
 Print@"please provide targetDevice!";Abort[]];
+If[Not@KeyExistsQ[assoc,"file"]&&Not@KeyExistsQ[assoc,"image"],
+Print@"please provide file or image!";Abort[]];
+If[KeyExistsQ[assoc,"file"],
+	If[Not@StringQ@assoc["file"],Print@"please provide file name as string!";Abort[]]];
 If[Not@KeyExistsQ[assoc,"objSz"],
 Print@"please provide objSz!";Abort[]];
 If[Not@KeyExistsQ[assoc,"modelSz"],
@@ -550,20 +554,27 @@ If[Not@KeyExistsQ[assoc,"model"],
 Print@"please provide model!";Abort[]];
 
 (*get rescaling factor*)
-zFac=If[Not@KeyExistsQ[assoc,"zFac"],
-Print@"trying to get zScaling from tif metadata...";
-metadata=Import[assoc["file"],"Exif"];
-If[Not@MissingQ@metadata["XResolution"],
-zspacing=ToExpression@StringTake[metadata["ImageDescription"],{Last@Last@StringPosition[metadata["ImageDescription"],"spacing"]+2,Last@Last@StringPosition[metadata["ImageDescription"],"spacing"]+7}];
-xspacing=N[1/metadata["XResolution"]];
-zspacing/xspacing,
-Print@"Failed Getting scale from metadata!";Abort[]
-]
-,assoc["zFac"]];
+zFac=Which[
+	Not@KeyExistsQ[assoc,"zFac"]&&KeyExistsQ[assoc,"file"],
+		Print@"trying to get zScaling from tif metadata...";
+		metadata=Import[assoc["file"],"Exif"];
+		If[Not@MissingQ@metadata["XResolution"],
+			zspacing=ToExpression@StringTake[metadata["ImageDescription"],{Last@Last@StringPosition[metadata["ImageDescription"],"spacing"]+2,Last@Last@StringPosition[metadata["ImageDescription"],"spacing"]+7}];
+			xspacing=N[1/metadata["XResolution"]];
+			zspacing/xspacing,	
+			Print@"Failed Getting scale from metadata!";Abort[]
+		],
+	Not@KeyExistsQ[assoc,"zFac"],
+		Print@"zFrac key needed";Abort[],
+	True,
+	assoc["zFac"]];
 (*resize image so that xy z same scale*)
 Print@"Rescaling 3D image...";
-
-img3D=ImageResize[Image3D[removeOutlierpixels@Image3D@Import@file,"Byte"],Scaled/@{1,1,zFac}];
+img3D=Which[
+	KeyExistsQ[assoc,"image"]&&Not@KeyExistsQ[assoc,"file"],
+	ImageResize[Image3D[removeOutlierpixels@assoc["image"],"Byte"],Scaled/@{1,1,zFac}],
+	Not@KeyExistsQ[assoc,"image"]&&KeyExistsQ[assoc,"file"],
+	ImageResize[Image3D[removeOutlierpixels@Image3D@Import@file,"Byte"],Scaled/@{1,1,zFac}]];
 Print@"starting segmentation...";
 segment3DImageGradientMap[img3D,assoc["model"],assoc["modelSz"],assoc["objSz"],assoc["threshold"],assoc["targetDevice"]]
 ]
