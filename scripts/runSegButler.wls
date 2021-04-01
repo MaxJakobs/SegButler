@@ -27,6 +27,12 @@ If[Length@$ScriptCommandLine>0,
         stacks=True,
         Print@"2D not implemented yet. Use -imgstacks to analsye 3D data";Abort[]
     ];
+    
+    If[MemberQ[args,"-gpu"],
+        gpu=True;
+        Print@"Using GPU! Experimental...",
+        gpu=False
+    ];
   
     If[MemberQ[args,"-objSz"],
         objSz=ToExpression@First@Extract[args,Position[args,"-objSz"]+1];,
@@ -35,6 +41,7 @@ If[Length@$ScriptCommandLine>0,
     stacks=True;
     imgdir="/Users/MJ 1/Dropbox (Cambridge University)/Documents/Science/CodeRepositories/SegButler/testdata/test3D";
     objSz=120;
+    gpu=False;
 ];
 
 
@@ -127,6 +134,6 @@ If[stacks,
 		FileNames["*.tif",imgdir],
 		FileNames["*.tif",FileNameJoin@{First@DirectoryStack[],imgdir}]];	
 	If[Length@imgFiles>0,
-		Map[analyse3Dstack[#,objSz,modelSz,model,0.5,False]&,imgFiles],
+		Map[analyse3Dstack[#,objSz,modelSz,model,0.5,gpu]&,imgFiles],
 		Print["No images found in: "<>FileNameJoin@{First@DirectoryStack[],imgdir}]]
 ]
