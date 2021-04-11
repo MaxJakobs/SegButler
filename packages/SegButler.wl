@@ -33,8 +33,8 @@ loadSemiSuperNet::usage="loads semisuper net from file to be used by package"
 Begin["`Private`"]
 
 
-loadSemiSuperNet[mxFile_]:=NetReplacePart[NetExtract[Import[mxFile]["TrainedNet"],"stylenetLabeled"],
-	{"Input"->NetEncoder[{"Image",{256,256}}],"Binary"->{256,256,2},"horzGrad"->NetDecoder[{"Image","Grayscale"}],"vertGrad"->NetDecoder[{"Image","Grayscale"}]}]
+loadSemiSuperNet[mxFile_]:=Module[{tmp=NetExtract[Import[mxFile]["TrainedNet"],"stylenetLabeled"]},NetReplacePart[tmp,
+	{"Input"->NetEncoder[{"Image",Rest@NetExtract[tmp,"Input"],If[First@NetExtract[tmp,"Input"]==1,"Grayscale","RGB"]}],"Binary"->Flatten@{Rest@NetExtract[tmp,"Input"],2},"horzGrad"->NetDecoder[{"Image","Grayscale"}],"vertGrad"->NetDecoder[{"Image","Grayscale"}]}]]
 
 
 removeOutlierpixels[img_,lq_:.001,uq_:.999,rand_:False]:=ImageAdjust[img,0,{Quantile[img,lq],Quantile[img,uq]},{0,1}]
