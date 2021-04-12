@@ -110,7 +110,7 @@ analyse3Dstack[file_,objSz_,modelSz_,model_,threshold_:0.5,gpu_:False]:=Module[{
 		
 		Print@"resizing...";
 		originalDim=ImageDimensions@originalimg3D;
-		cleanSegmented=Round@ArrayResample[cleanSegmented,{originalDim[[3]],originalDim[[1]],originalDim[[2]]},Resampling->"NearestLeft"];
+		cleanSegmented=Round@ArrayResample[cleanSegmented,{originalDim[[3]],originalDim[[2]],originalDim[[1]]},Resampling->"NearestLeft"];
 
 		Print@"making pretty overlay...";
 		slices=Image3DSlices[originalimg3D,All];
@@ -129,6 +129,21 @@ analyse3Dstack[file_,objSz_,modelSz_,model_,threshold_:0.5,gpu_:False]:=Module[{
 	];
 
 
+Dimensions@cleanSegmented
+
+
+Dimensions@ImageData@slices[[1]]
+
+
+originalDim
+
+
+overlays[[1]]
+
+
+slices[[10]]
+
+
 If[stacks,
 	imgFiles=If[StringTake[imgdir,1]=="/",
 		FileNames["*.tif",imgdir],
@@ -137,3 +152,6 @@ If[stacks,
 		Map[analyse3Dstack[#,objSz,modelSz,model,0.5,gpu]&,imgFiles],
 		Print["No images found in: "<>FileNameJoin@{First@DirectoryStack[],imgdir}]]
 ]
+
+
+

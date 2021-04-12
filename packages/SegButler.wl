@@ -26,7 +26,7 @@ SegmentationButler::usage="segments a 2D image (top level function), Takes an in
 	binaryThreshold-> 0.5
 	morphoBinFac-> 1 factor for morphological binarisation, <1 useful if objects are not fully recognised
 	unhinged-> False (no limits on size and computation time)"
-	
+
 loadSemiSuperNet::usage="loads semisuper net from file to be used by package"
 
 
