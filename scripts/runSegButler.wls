@@ -129,21 +129,6 @@ analyse3Dstack[file_,objSz_,modelSz_,model_,threshold_:0.5,gpu_:False]:=Module[{
 	];
 
 
-Dimensions@cleanSegmented
-
-
-Dimensions@ImageData@slices[[1]]
-
-
-originalDim
-
-
-overlays[[1]]
-
-
-slices[[10]]
-
-
 If[stacks,
 	imgFiles=If[StringTake[imgdir,1]=="/",
 		FileNames["*.tif",imgdir],
