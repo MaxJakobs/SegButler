@@ -60,7 +60,6 @@ netevaluateSizeUPfcn[imgIN_,net_,targetDevice_:"CPU"]:=Module[{dim,img,fcn,netdi
 	dim=ImageDimensions@img;
 	netdim=Round[dim/16]*16;
 	fcn=NetReplacePart[net,"Input"->NetEncoder[{"Image",netdim,"RGB"}]];	
-	
 	5*First[dim/netdim]*First@fcn[removeOutlierpixels@ImageResize[img,netdim]]]
 
 
@@ -484,14 +483,14 @@ netevaluateGradNet3D[img3Din_,net_,rescale_,td_]:=Module[{xy,xz,yz,i,n,img3D,out
 		Values[netevaluateGradNet[#,net,td]])&,Image3DSlices[img3D,All]]];
 	
 	Print@"Transposing...";
-	<|"img"->img3D,
-		"pmap"->(xy[[1]]+xz[[1]]+yz[[1]])/3,
+	<|"img"->img3Din,
+		"pmap"->ImageResize[(xy[[1]]+xz[[1]]+yz[[1]])/3,Scaled[1/rescale]],
 		(*"gradMap"->Image3D[(Transpose[{Normal@SparseArray[{},Reverse@ImageDimensions@xy[[3]]],ImageData@xy[[2]],ImageData@xy[[3]]},{4,1,2,3}]+
 							Transpose[{ImageData@xz[[2]],Normal@SparseArray[{},Reverse@ImageDimensions@xz[[3]]],ImageData@xz[[3]]},{4,1,2,3}]+
 							Transpose[{ImageData@yz[[2]],ImageData@yz[[3]],Normal@SparseArray[{},Reverse@ImageDimensions@yz[[3]]]},{4,1,2,3}])/2]*)
-	 "gradMap"->Image3D[(Transpose[{Normal@SparseArray[{},Reverse@ImageDimensions@xy[[3]]],ImageData@xy[[2]],ImageData@xy[[3]]}+
+	 "gradMap"->ImageResize[Image3D[(Transpose[{Normal@SparseArray[{},Reverse@ImageDimensions@xy[[3]]],ImageData@xy[[2]],ImageData@xy[[3]]}+
 							{ImageData@xz[[2]],Normal@SparseArray[{},Reverse@ImageDimensions@xz[[3]]],ImageData@xz[[3]]}+
-							{ImageData@yz[[2]],ImageData@yz[[3]],Normal@SparseArray[{},Reverse@ImageDimensions@yz[[3]]]},{4,1,2,3}])/2]|>
+							{ImageData@yz[[2]],ImageData@yz[[3]],Normal@SparseArray[{},Reverse@ImageDimensions@yz[[3]]]},{4,1,2,3}])/2],Scaled[1/rescale]]|>
 	]
 
 
@@ -502,15 +501,15 @@ netevaluateGradNet3D[img3Din_,net_,rescale_,td_]:=Module[{xy,xz,yz,i,n,img3D,out
 		CompilationTarget->"C"*)]]*)
 
 
-segmentPmapWithGradients3D[img3D_,out_,objectsize_,binthreshold_:.25]:=Module[{bin,pixels,endpoints,clusters,gradMap,getcluster,segmented,findCenters},
-	bin=Binarize[out["pmap"],binthreshold];
+segmentPmapWithGradients3D[img3D_,out_,objectsize_,binthreshold_:.25,morphoBinFac_:1]:=Module[{bin,pixels,endpoints,clusters,gradMap,getcluster,segmented,findCenters},
+	bin=MorphologicalBinarize[out["pmap"],{morphoBinFac,binthreshold}];
 	
 	pixels=First/@Most[ArrayRules@Round@ImageData@bin];
-	
+	Print@"gradient ascent...";
 	(*compile grad ascent algorithm*)
-	findCenters=compileGradientAscentAlgo[ImageData@out["gradMap"],(5*2*3*objectsize)];
+	findCenters=compileGradientAscentAlgo[ImageData@out["gradMap"],(2*3*objectsize)];
 	endpoints=findCenters@pixels;
-	
+	Print@"clustering...";
 	clusters=Map[First,
 		Most/@ArrayRules/@Last/@ComponentMeasurements[
 			Image3D@SparseArray[Thread[Round@endpoints->1],Reverse@ImageDimensions@bin],"Mask"]
@@ -530,10 +529,10 @@ segmentPmapWithGradients3D[img3D_,out_,objectsize_,binthreshold_:.25]:=Module[{b
 ]
 
 
-segment3DImageGradientMap[img3D_,net_,netobjectsize_,imgobjectsize_,threshold_:.25,td_:"GPU"]:=
+segment3DImageGradientMap[img3D_,net_,netobjectsize_,imgobjectsize_,threshold_:.25,td_:"GPU",morphoBinFac_:1]:=
 	segmentPmapWithGradients3D[img3D,
 		netevaluateGradNet3D[img3D,net,netobjectsize/imgobjectsize,td],
-		netobjectsize,threshold]
+		imgobjectsize,threshold,morphoBinFac]
 
 
 
@@ -552,6 +551,8 @@ If[Not@KeyExistsQ[assoc,"modelSz"],
 Print@"please provide modelSz!";Abort[]];
 If[Not@KeyExistsQ[assoc,"model"],
 Print@"please provide model!";Abort[]];
+If[Not@KeyExistsQ[assoc,"morphoBinFac"],
+Print@"please provide morphoBinFac!";Abort[]];
 
 (*get rescaling factor*)
 zFac=Which[
@@ -576,7 +577,7 @@ img3D=Which[
 	Not@KeyExistsQ[assoc,"image"]&&KeyExistsQ[assoc,"file"],
 	ImageResize[Image3D[removeOutlierpixels@Image3D@Import@file,"Byte"],Scaled/@{1,1,zFac}]];
 Print@"starting segmentation...";
-segment3DImageGradientMap[img3D,assoc["model"],assoc["modelSz"],assoc["objSz"],assoc["threshold"],assoc["targetDevice"]]
+segment3DImageGradientMap[img3D,assoc["model"],assoc["modelSz"],assoc["objSz"],assoc["threshold"],assoc["targetDevice"],assoc["morphoBinFac"]]
 ]
 
 

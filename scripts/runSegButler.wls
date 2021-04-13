@@ -25,7 +25,7 @@ If[Length@$ScriptCommandLine>0,
     ];
     If[MemberQ[args,"-imgstacks"],
         stacks=True,
-        Print@"2D not implemented yet. Use -imgstacks to analsye 3D data";Abort[]
+        Print@"2D not implemented yet. Use -imgstacks to analyse 3D data";Abort[]
     ];
     
     If[MemberQ[args,"-gpu"],
@@ -77,36 +77,36 @@ If[NumberQ@modelSz,
 
 clean3DComponents[comp_,objSz_]:=Module[{},
 	bd=BorderDimensions@Image3D@comp[[2]];
-	SparseArray@Round@ImageData@ImagePad[DeleteSmallComponents[Dilation[Erosion[Closing[FillingTransform@ImagePad[Image3D@comp[[2]],-bd],Round[objSz/10]],Round[objSz/10]],Round[objSz/10]],(objSz^3)/3],bd]*comp[[1]]
+	SparseArray@Round@ImageData@ImagePad[DeleteSmallComponents[Dilation[Erosion[FillingTransform@ImagePad[Image3D@comp[[2]],-bd],DiskMatrix@Ceiling[objSz/10]],DiskMatrix@Ceiling[objSz/10]],(objSz^3)/3],bd]*comp[[1]]
 ]
 
 
-load3Dstack[file_,orginalSz_,targetSz_]:=Module[{fac},
+load3Dstack[file_]:=Module[{fac},
 		fac=ToExpression@StringReplace[Part[StringSplit[StringTake[file,StringPosition[file,"z"~~___~~"."]],{".","_"}],1,2],"-"->"."]/ToExpression@StringReplace[Part[StringSplit[StringTake[file,StringPosition[file,"xy"~~___~~"_"]],{".","_"}],1,2],"-"->"."];
 		exif=Import[file,"Exif"];
 		channels=ToExpression@First@StringTake[StringTake[exif["ImageDescription"],StringPosition[exif["ImageDescription"],"channels="~~_]],-1];
 		Print["channels found: "<>ToString@channels];
 		If[NumberQ@fac,
 			img3D=Image3D@Map[ColorCombine[#,"RGB"]&,Most/@Partition[Import@file,channels]];
-			{ImageResize[img3D,Scaled/@(targetSz/orginalSz*{1,1,fac})],img3D},
+			ImageResize[img3D,Scaled/@{1,1,fac}],
 			Print@"couldnt calculate zscale from file name!";Abort[]]
 	];
 
 
 analyse3Dstack[file_,objSz_,modelSz_,model_,threshold_:0.5,gpu_:False]:=Module[{},
 		Print["Analysing: "<>FileBaseName@file];
-		{img3D,originalimg3D}=load3Dstack[file,objSz,modelSz];
+		img3D=load3Dstack[file];
 		
 		Print@"running SegButler...";
-		res=SegButler3D@<|"image"->img3D,"objSz"->modelSz,"modelSz"->modelSz,"model"->model,"threshold"->threshold,"targetDevice"->If[gpu,"GPU","CPU"],"zFac"->1|>;
+		res=SegButler3D@<|"image"->img3D,"objSz"->objSz,"modelSz"->modelSz,"model"->model,"threshold"->threshold,"targetDevice"->If[gpu,"GPU","CPU"],"zFac"->1,"morphoBinFac"->.5|>;
 		
 		If[res["segmented"]==0,
 			Print["Nothing found! Try different net or threshold"];];
 		
 	
 		Print@"cleaning...";
-		comps=ComponentMeasurements[DeleteSmallComponents[Normal@res["segmented"],(modelSz^3)/3],"Mask"];
-		cleanSegmented=SparseArray@Round@ImageData@ImageApply[Max,Map[Image3D@clean3DComponents[#,modelSz]&,comps]];
+		comps=ComponentMeasurements[DeleteSmallComponents[Normal@res["segmented"],(objSz^3)/3],"Mask"];
+		cleanSegmented=SparseArray@Round@ImageData@ImageApply[Max,Map[Image3D@clean3DComponents[#,objSz]&,comps]];
 		
 		Print@"resizing...";
 		originalDim=ImageDimensions@originalimg3D;
@@ -137,6 +137,10 @@ If[stacks,
 		Map[analyse3Dstack[#,objSz,modelSz,model,0.5,gpu]&,imgFiles],
 		Print["No images found in: "<>FileNameJoin@{First@DirectoryStack[],imgdir}]]
 ]
+
+
+(* ::Print:: *)
+(*"running SegButler...">=>=*)
 
 
 
