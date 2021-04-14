@@ -507,7 +507,7 @@ segmentPmapWithGradients3D[img3D_,out_,objectsize_,binthreshold_:.25,morphoBinFa
 	pixels=First/@Most[ArrayRules@Round@ImageData@bin];
 	Print@"gradient ascent...";
 	(*compile grad ascent algorithm*)
-	findCenters=compileGradientAscentAlgo[ImageData@out["gradMap"],(2*3*objectsize)];
+	findCenters=compileGradientAscentAlgo[ImageData@out["gradMap"],(3*objectsize)];
 	endpoints=findCenters@pixels;
 	Print@"clustering...";
 	clusters=Map[First,

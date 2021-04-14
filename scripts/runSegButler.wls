@@ -77,7 +77,7 @@ If[NumberQ@modelSz,
 
 clean3DComponents[comp_,objSz_]:=Module[{},
 	bd=BorderDimensions@Image3D@comp[[2]];
-	SparseArray@Round@ImageData@ImagePad[DeleteSmallComponents[Dilation[Erosion[FillingTransform@ImagePad[Image3D@comp[[2]],-bd],DiskMatrix@Ceiling[objSz/10]],DiskMatrix@Ceiling[objSz/10]],(objSz^3)/3],bd]*comp[[1]]
+	SparseArray@Round@ImageData@ImagePad[DeleteSmallComponents[Dilation[Erosion[FillingTransform@ImagePad[Image3D@comp[[2]],-bd],Ceiling[objSz/10]],Ceiling[objSz/10]],(objSz^3)/3],bd]*comp[[1]]
 ]
 
 
@@ -137,10 +137,6 @@ If[stacks,
 		Map[analyse3Dstack[#,objSz,modelSz,model,0.5,gpu]&,imgFiles],
 		Print["No images found in: "<>FileNameJoin@{First@DirectoryStack[],imgdir}]]
 ]
-
-
-(* ::Print:: *)
-(*"running SegButler...">=>=*)
 
 
 
