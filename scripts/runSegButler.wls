@@ -37,12 +37,22 @@ If[Length@$ScriptCommandLine>0,
     If[MemberQ[args,"-objSz"],
         objSz=ToExpression@First@Extract[args,Position[args,"-objSz"]+1];,
         Print@"script requires objectsize estimate in pixels!";Abort[]
-    ];,
+    ];
+     If[MemberQ[args,"-downscale"],
+        downscalefactor=ToExpression@First@Extract[args,Position[args,"-downscale"]+1];
+        ,
+        Print@"script requires objectsize estimate in pixels!";Abort[]
+    ];
+    ,
+    downscalefactor=0.5;
     stacks=True;
     imgdir="/Users/MJ 1/Dropbox (Cambridge University)/Documents/Science/CodeRepositories/SegButler/testdata/test3D";
     objSz=120;
     gpu=False;
 ];
+
+
+Print["downscaling set to: "<>ToString@downscalefactor];
 
 
 Print["analysing folder: "<>imgdir];
@@ -81,22 +91,24 @@ clean3DComponents[comp_,objSz_]:=Module[{},
 ]
 
 
-load3Dstack[file_]:=Module[{fac},
+load3Dstack[file_,downscalefactor_]:=Module[{fac},
 		fac=ToExpression@StringReplace[Part[StringSplit[StringTake[file,StringPosition[file,"z"~~___~~"."]],{".","_"}],1,2],"-"->"."]/ToExpression@StringReplace[Part[StringSplit[StringTake[file,StringPosition[file,"xy"~~___~~"_"]],{".","_"}],1,2],"-"->"."];
 		exif=Import[file,"Exif"];
+		Print@fac;
 		channels=ToExpression@First@StringTake[StringTake[exif["ImageDescription"],StringPosition[exif["ImageDescription"],"channels="~~_]],-1];
 		Print["channels found: "<>ToString@channels];
 		If[NumberQ@fac,
 			img3D=Image3D@Map[ColorCombine[#,"RGB"]&,Most/@Partition[Import@file,channels]];
-			ImageResize[img3D,Scaled/@{1,1,fac}],
+			ImageResize[img3D,Scaled/@(downscalefactor*{1,1,fac})],
 			Print@"couldnt calculate zscale from file name!";Abort[]]
 	];
 
 
-analyse3Dstack[file_,objSz_,modelSz_,model_,threshold_:0.5,gpu_:False]:=Module[{},
+analyse3Dstack[file_,objSzIN_,modelSz_,model_,threshold_:0.5,gpu_:False,downscalefactor_:1]:=Module[{objSz},
 		Print["Analysing: "<>FileBaseName@file];
-		img3D=load3Dstack[file];
-		
+		img3D=load3Dstack[file,downscalefactor];
+		Print@ImageDimensions@img3D;
+		objSz=downscalefactor*objSzIN;
 		Print@"running SegButler...";
 		res=SegButler3D@<|"image"->img3D,"objSz"->objSz,"modelSz"->modelSz,"model"->model,"threshold"->threshold,"targetDevice"->If[gpu,"GPU","CPU"],"zFac"->1,"morphoBinFac"->.5|>;
 		
@@ -109,11 +121,11 @@ analyse3Dstack[file_,objSz_,modelSz_,model_,threshold_:0.5,gpu_:False]:=Module[{
 		cleanSegmented=SparseArray@Round@ImageData@ImageApply[Max,Map[Image3D@clean3DComponents[#,objSz]&,comps]];
 		
 		Print@"resizing...";
-		originalDim=ImageDimensions@originalimg3D;
+		originalDim=ImageDimensions@img3D;
 		cleanSegmented=Round@ArrayResample[cleanSegmented,{originalDim[[3]],originalDim[[2]],originalDim[[1]]},Resampling->"NearestLeft"];
 
 		Print@"making pretty overlay...";
-		slices=Image3DSlices[originalimg3D,All];
+		slices=Image3DSlices[img3D,All];
 		cslices=Image3DSlices[Colorize@cleanSegmented,All];
 		overlays=MapThread[ImageAssemble@{ImageAdjust@#1,Blend[{ImageAdjust@#1,ImageCompose[SetAlphaChannel@ImageAdjust@#1,RemoveBackground[#2,{Black,.01}]]},.5]}&,{slices,cslices}];
 		
@@ -134,7 +146,7 @@ If[stacks,
 		FileNames["*.tif",imgdir],
 		FileNames["*.tif",FileNameJoin@{First@DirectoryStack[],imgdir}]];	
 	If[Length@imgFiles>0,
-		Map[analyse3Dstack[#,objSz,modelSz,model,0.5,gpu]&,imgFiles],
+		Map[analyse3Dstack[#,objSz,modelSz,model,0.5,gpu,downscalefactor]&,imgFiles],
 		Print["No images found in: "<>FileNameJoin@{First@DirectoryStack[],imgdir}]]
 ]
 

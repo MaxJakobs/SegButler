@@ -2,7 +2,11 @@
 
 ### Running SegButler on 3D image stacks in subfolders
 
-```wolframscript -script runSegButler.wls -imgdir ../testdata/test3D/ -objSz 120 -imgstacks```
+```wolframscript -script runSegButler.wls -imgdir ../testdata/test3D/ -objSz 120 -downscale 0.5 -imgstacks```
+
+flags:
+```-objSz [Size of objects in image in pixels]```
+```-downscale [Downscale factor of original image, useful to speed up analysis]```
 
 Image files need to have the following format:
 
