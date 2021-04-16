@@ -502,13 +502,15 @@ netevaluateGradNet3D[img3Din_,net_,rescale_,td_]:=Module[{xy,xz,yz,i,n,img3D,out
 
 
 segmentPmapWithGradients3D[img3D_,out_,objectsize_,binthreshold_:.25,morphoBinFac_:1]:=Module[{bin,pixels,endpoints,clusters,gradMap,getcluster,segmented,findCenters},
-	bin=MorphologicalBinarize[out["pmap"],{morphoBinFac,binthreshold}];
+	bin=ImagePad[MorphologicalBinarize[out["pmap"],{morphoBinFac,binthreshold}],2,Padding->0];
 	
 	pixels=First/@Most[ArrayRules@Round@ImageData@bin];
 	Print@"gradient ascent...";
 	(*compile grad ascent algorithm*)
-	findCenters=compileGradientAscentAlgo[ImageData@out["gradMap"],(3*objectsize)];
-	endpoints=findCenters@pixels;
+	Check[
+		findCenters=compileGradientAscentAlgo[ImageData@ImagePad[out["gradMap"],2,Padding->0],(3*3*objectsize)];
+		endpoints=findCenters@pixels;,
+		Print@"failed gradient ascent! Dumped out file to check";Put[out,"~/ascentDump.mx"];Abort[]];
 	Print@"clustering...";
 	clusters=Map[First,
 		Most/@ArrayRules/@Last/@ComponentMeasurements[
@@ -519,10 +521,10 @@ segmentPmapWithGradients3D[img3D_,out_,objectsize_,binthreshold_:.25,morphoBinFa
 	segmented=SparseArray[Thread[pixels->First/@getcluster/@endpoints],Reverse@ImageDimensions@bin];
 	
 	(*segmented=SparseArray@Round@ImageData@ImageFilter[If[#[[2,2,2]]!=0,Max@#,0]&,Image3D@segmented,1];*)
-	segmented=SparseArray@DeleteSmallComponents[Normal@segmented,Round[(objectsize/3)^3]];
+	segmented=SparseArray@DeleteSmallComponents[Normal@segmented,Round[(objectsize^3)/100]];
 	
 	(*Delete Padding*)
-	segmented=ArrayPad[segmented,-1];
+	segmented=ArrayPad[segmented,-2];
 	
 	Sow@AbsoluteTiming[segmented=renumberSA@segmented;];
 	<|out,"segmented"->segmented|>

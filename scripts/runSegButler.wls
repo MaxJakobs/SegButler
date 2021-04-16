@@ -87,7 +87,7 @@ If[NumberQ@modelSz,
 
 clean3DComponents[comp_,objSz_]:=Module[{},
 	bd=BorderDimensions@Image3D@comp[[2]];
-	SparseArray@Round@ImageData@ImagePad[DeleteSmallComponents[Dilation[Erosion[FillingTransform@ImagePad[Image3D@comp[[2]],-bd],Ceiling[objSz/10]],Ceiling[objSz/10]],(objSz^3)/3],bd]*comp[[1]]
+	SparseArray@Round@ImageData@ImagePad[DeleteSmallComponents[Dilation[Erosion[Closing[FillingTransform@ImagePad[Image3D@comp[[2]],-bd],Ceiling[objSz/50]],DiskMatrix@Table[Ceiling[objSz/50],3]],DiskMatrix@Table[Ceiling[objSz/50],3]],((objSz)^3)/10],bd]*comp[[1]]
 ]
 
 
@@ -117,7 +117,7 @@ analyse3Dstack[file_,objSzIN_,modelSz_,model_,threshold_:0.5,gpu_:False,downscal
 		
 	
 		Print@"cleaning...";
-		comps=ComponentMeasurements[DeleteSmallComponents[Normal@res["segmented"],(objSz^3)/3],"Mask"];
+		comps=ComponentMeasurements[DeleteSmallComponents[Normal@res["segmented"],(objSz^3)/50],"Mask"];
 		cleanSegmented=SparseArray@Round@ImageData@ImageApply[Max,Map[Image3D@clean3DComponents[#,objSz]&,comps]];
 		
 		Print@"resizing...";
@@ -151,4 +151,22 @@ If[stacks,
 ]
 
 
+(*out=Get@"/Users/MJ 1/ascentDump.mx";*)
 
+
+(*bin=MorphologicalBinarize[out["pmap"],{.5,.5}];
+	
+pixels=First/@Most[ArrayRules@Round@ImageData@bin];*)
+
+
+(*objectsize=60*)
+
+
+(*ImageDimensions@out["gradMap"]*)
+
+
+(*ImageDimensions@*)
+
+
+(*findCenters=compileGradientAscentAlgo[ImageData@ImagePad[out["gradMap"],2,Padding\[Rule]0],(3*10*objectsize)];
+		endpoints=findCenters@pixels;*)
