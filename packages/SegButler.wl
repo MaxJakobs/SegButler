@@ -267,6 +267,7 @@ segmentPmapWithGradients[img_,out_,objectsize_,binThreshold_:0.5,borderObjects_:
 				"objectsize"->objectsize,
 				"flows"->ColorCombine[{Ramp@out["horzGrad"],Ramp[-1*out["horzGrad"]],Ramp@out["vertGrad"],Ramp[-1*out["vertGrad"]]}],
 				"overlay"->overlay,
+				"styles"->out["style"],
 				"overlaylabeled"->overlaylabeled,
 				"objects"->segmented,"error"->False,"messages"->"Success!"|>,
 			Not@debug,<|

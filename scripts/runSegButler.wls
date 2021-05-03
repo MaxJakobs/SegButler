@@ -46,9 +46,11 @@ If[Length@$ScriptCommandLine>0,
     ,
     downscalefactor=0.5;
     stacks=True;
-    imgdir="/Users/MJ 1/Dropbox (Cambridge University)/Documents/Science/CodeRepositories/SegButler/testdata/test3D";
+    imgdir="home/max/deepMirror Dropbox/Data/BasicCells/SophieKrusoe/Test";
+    
+    (*imgdir="/Users/MJ 1/DeepMirrorDropbox/deepMirror Dropbox/Data/BasicCells/SophieKrusoe/Test";*)
     objSz=120;
-    gpu=False;
+    gpu=True;
 ];
 
 
@@ -85,16 +87,27 @@ If[NumberQ@modelSz,
 (*Apply SegButler*)
 
 
-clean3DComponents[comp_,objSz_]:=Module[{},
+(*clean3DComponents[comp_,objSz_]:=Module[{},
 	bd=BorderDimensions@Image3D@comp[[2]];
 	SparseArray@Round@ImageData@ImagePad[DeleteSmallComponents[Dilation[Erosion[Closing[FillingTransform@ImagePad[Image3D@comp[[2]],-bd],Ceiling[objSz/50]],DiskMatrix@Table[Ceiling[objSz/50],3]],DiskMatrix@Table[Ceiling[objSz/50],3]],((objSz)^3)/10],bd]*comp[[1]]
+]*)
+
+
+clean3DComponents[comp_,objSz_]:=Module[{},
+	rules=Most@ArrayRules@comp[[2]];
+	mins=Min/@Transpose[rules[[;;,1]]]-1;
+	maxs=Max/@Transpose[rules[[;;,1]]]-1;
+	subSA=SparseArray@Map[#[[1]]-mins->#[[2]]&,rules];
+	subSA=SparseArray@Round@ImageData@DeleteSmallComponents[Dilation[Erosion[Closing[FillingTransform@Image3D@subSA,Ceiling[objSz/50]],DiskMatrix@Table[Ceiling[objSz/50],3]],DiskMatrix@Table[Ceiling[objSz/50],3]],(objSz^3)/50]*comp[[1]];
+	rules=Most@ArrayRules@subSA;
+	SparseArray[Map[#[[1]]+mins->#[[2]]&,rules],Dimensions@comp[[2]]]
 ]
 
 
 load3Dstack[file_,downscalefactor_]:=Module[{fac},
 		fac=ToExpression@StringReplace[Part[StringSplit[StringTake[file,StringPosition[file,"z"~~___~~"."]],{".","_"}],1,2],"-"->"."]/ToExpression@StringReplace[Part[StringSplit[StringTake[file,StringPosition[file,"xy"~~___~~"_"]],{".","_"}],1,2],"-"->"."];
 		exif=Import[file,"Exif"];
-		Print@fac;
+		Print["z scale= "<>ToString@fac];
 		channels=ToExpression@First@StringTake[StringTake[exif["ImageDescription"],StringPosition[exif["ImageDescription"],"channels="~~_]],-1];
 		Print["channels found: "<>ToString@channels];
 		If[NumberQ@fac,
@@ -118,7 +131,7 @@ analyse3Dstack[file_,objSzIN_,modelSz_,model_,threshold_:0.5,gpu_:False,downscal
 	
 		Print@"cleaning...";
 		comps=ComponentMeasurements[DeleteSmallComponents[Normal@res["segmented"],(objSz^3)/50],"Mask"];
-		cleanSegmented=SparseArray@Round@ImageData@ImageApply[Max,Map[Image3D@clean3DComponents[#,objSz]&,comps]];
+		cleanSegmented=SparseArray[Flatten[Map[Most@ArrayRules@clean3DComponents[#,objSz]&,comps],1],Dimensions@res["segmented"]];
 		
 		Print@"resizing...";
 		originalDim=ImageDimensions@img3D;
@@ -133,6 +146,11 @@ analyse3Dstack[file_,objSzIN_,modelSz_,model_,threshold_:0.5,gpu_:False,downscal
 		
 		outputdir=FileNameJoin@{FileNameJoin[FileNameSplit[file][[;;-2]]],FileBaseName[file]<>"_RESULTS"};
 		CreateDirectory[outputdir];
+		
+		Print@"Caclulating measurements";
+		measurements=ComponentMeasurements[cleanSegmented,{"Count","PerimeterCount","Circularity","Length","Width"},All,"Dataset"];
+		Export[FileNameJoin@{outputdir,"morphologicalQuantifications.csv"},measurements];
+		
 		CreateDirectory[FileNameJoin@{outputdir,"overlays"}];
 		CreateDirectory[FileNameJoin@{outputdir,"binary"}];
 		
@@ -151,22 +169,27 @@ If[stacks,
 ]
 
 
-(*out=Get@"/Users/MJ 1/ascentDump.mx";*)
+(* ::Subsection:: *)
+(*Debugging Section*)
 
 
-(*bin=MorphologicalBinarize[out["pmap"],{.5,.5}];
-	
-pixels=First/@Most[ArrayRules@Round@ImageData@bin];*)
+(*imgFiles=If[StringTake[imgdir,1]=="/",
+		FileNames["*.tif",imgdir],
+		FileNames["*.tif",FileNameJoin@{First@DirectoryStack[],imgdir}]]*)
 
 
-(*objectsize=60*)
+(*file=imgFiles[[1]]
+objSzIN=objSz;
+modelSz
+model
+threshold=0.5
+gpu=False
+downscalefactor*)
 
 
-(*ImageDimensions@out["gradMap"]*)
+(*Print["Analysing: "<>FileBaseName@file];
+		img3D=load3Dstack[file,downscalefactor];
+*)
 
 
-(*ImageDimensions@*)
 
-
-(*findCenters=compileGradientAscentAlgo[ImageData@ImagePad[out["gradMap"],2,Padding\[Rule]0],(3*10*objectsize)];
-		endpoints=findCenters@pixels;*)
