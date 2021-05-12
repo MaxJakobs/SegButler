@@ -435,9 +435,11 @@ SegmentationButler[assoc_]:=Module[{originalDim,objSize,preferredObjectSize,imgR
 		Sow@{
 			If[KeyExistsQ[assoc,"flows"]&&Not@assoc["flows"],
 			(*only binarize pmap if flows off*)
-			First@AbsoluteTiming[out=<|"estimatedObjectSize"->objSize,
-				out,
-				"objects"->SparseArray@MorphologicalComponents@Binarize[out["pmap"],.5],"error"->False,"messages"->"Success!"|>],
+			segmented=SparseArray@MorphologicalComponents@Binarize[out["pmap"],If[KeyExistsQ[assoc,"binaryThreshold"],assoc["binaryThreshold"],.5]];
+			First@AbsoluteTiming[
+				out=<|"estimatedObjectSize"->objSize,out,
+				"objects"->segmented,"error"->False,"messages"->"Success!",
+				"overlay"->Image[Blend[{ImageAdjust@assoc["image"],ImageCompose[SetAlphaChannel@ImageAdjust@assoc["image"],RemoveBackground[Colorize@segmented,{Black,.01}]]},.9],ImageSize->ImageDimensions@assoc["image"]]|>],
 			
 			First@AbsoluteTiming[out=<|"estimatedObjectSize"->objSize,
 			segmentPmapWithGradients[If[KeyExistsQ[assoc,"upsample"]&&Not@assoc["upsample"],imgRescaled,assoc["image"]],

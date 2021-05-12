@@ -119,6 +119,14 @@ load3Dstack[file_,downscalefactor_]:=Module[{fac},
 
 analyse3Dstack[file_,objSzIN_,modelSz_,model_,threshold_:0.5,gpu_:False,downscalefactor_:1]:=Module[{objSz},
 		Print["Analysing: "<>FileBaseName@file];
+
+		outputdir=FileNameJoin@{FileNameJoin[FileNameSplit[file][[;;-2]]],FileBaseName[file]<>"_RESULTS"};
+		If[DirectoryQ[outputdir],
+			Print@"output directory found! Continueing with next one!";
+			Return[False]
+		];
+		CreateDirectory[outputdir];
+
 		img3D=load3Dstack[file,downscalefactor];
 		Print@ImageDimensions@img3D;
 		objSz=downscalefactor*objSzIN;
@@ -144,8 +152,7 @@ analyse3Dstack[file_,objSzIN_,modelSz_,model_,threshold_:0.5,gpu_:False,downscal
 		
 		segslices=Image3DSlices[Image3D[Round[cleanSegmented],"Bit16"],All];
 		
-		outputdir=FileNameJoin@{FileNameJoin[FileNameSplit[file][[;;-2]]],FileBaseName[file]<>"_RESULTS"};
-		CreateDirectory[outputdir];
+		
 		
 		Print@"Caclulating measurements";
 		measurements=ComponentMeasurements[cleanSegmented,{"Count","PerimeterCount","Circularity","Length","Width"},All,"Dataset"];
