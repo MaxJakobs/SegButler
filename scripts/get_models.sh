@@ -13,7 +13,7 @@ if [ ! -f "nucSZUP_1.mx" ]; then
     curl -L -o nucSZUP_1.mx -k https://www.dropbox.com/s/7n73anxxue3ik12/SFCNNSizeUp_CountNuc__crop208Thu_28_May_2020_07-56-18.mx?dl=1
 fi
 if [ ! -f "cell30_1.mx" ]; then
-    curl -L -o cell30_1.mx -k https://www.dropbox.com/s/3ww2rb6f1lxb32c/PaperCytoButler_15xDlosst_objSz30_BasicCells_1_checkpnt0_crop256_seed9108Sun_20_Dec_2020_02-57-31.mx?dl=1
+    curl -L -o cell30_1.mx -k https://www.dropbox.com/s/rm7kz8fke1xp9m8/cell30_1.mx?dl=1
 fi
 if [ ! -f "cell15_1.mx" ]; then
     curl -L -o cell15_1.mx -k https://www.dropbox.com/s/bf3mu0nlmmuhfba/UNETdswResGradientOut_CellLiner_objSz15_crop128Tue_26_May_2020_07-03-45.mx?dl=1
