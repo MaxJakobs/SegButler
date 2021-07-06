@@ -22,6 +22,7 @@ SegmentationButler::usage="segments a 2D image (top level function), Takes an in
 	imgObjectSize-> size of objects in image
 	nets-><|size->net,sizeupt->net,..|>
 	Optional (Default):
+	thresholdFlow-> False thresholds flow map instead of binary one
 	smoothOutput-> False upsamples image before gradient ascend
 	binaryThreshold-> 0.5
 	morphoBinFac-> 1 factor for morphological binarisation, <1 useful if objects are not fully recognised
@@ -201,14 +202,18 @@ compileGradientAscentAlgo[gradMap_,mxiter_]:=Module[{getstep},
 	SparseArray@Round@Map[Max,Transpose[ImageData/@tmp,{3,1,2}],{2}]]*)
 
 
-segmentPmapWithGradients[img_,out_,objectsize_,binThreshold_:0.5,borderObjects_:True,debug_:False,upsample_:True,morphoBinfac_:1]:=Module[{getstep,imgOriginalScale,mxiter,clusters,getcluster,findCenters,bin,lines,endpoints,gradMap,segmented,overlay,pixels,labels,overlaylabeled,dostep,step,return},
+segmentPmapWithGradients[img_,out_,objectsize_,binThreshold_:0.5,borderObjects_:True,debug_:False,upsample_:True,morphoBinfac_:1,thrFlow_:False]:=Module[{getstep,imgOriginalScale,mxiter,clusters,getcluster,findCenters,bin,lines,endpoints,gradMap,segmented,overlay,pixels,labels,overlaylabeled,dostep,step,return},
 	
-	bin=ImagePad[MorphologicalBinarize[out["pmap"],{morphoBinfac*binThreshold,binThreshold}],2,Padding->0];
+	bin=If[Not@thrFlow,
+		ImagePad[MorphologicalBinarize[out["pmap"],{morphoBinfac*binThreshold,binThreshold}],2,Padding->0],
+		ImagePad[MorphologicalBinarize[ImageApply[Max,{Abs@out["horzGrad"],Abs@out["vertGrad"]}],{morphoBinfac*binThreshold,binThreshold}],2,Padding->0]
+		];
 	
 	gradMap=Transpose[ImageData/@{ImagePad[out["horzGrad"],2,Padding->0],
 								ImagePad[out["vertGrad"],2,Padding->0]},{3,1,2}];
 	
 	Sow@bin;
+	Sow@gradMap;
 	(*get pixels*)
 	Sow@First@AbsoluteTiming[
 	pixels=First/@Most[ArrayRules@ImageData@bin];];
@@ -222,7 +227,7 @@ segmentPmapWithGradients[img_,out_,objectsize_,binThreshold_:0.5,borderObjects_:
 	(************Cluster gradient ascent endpoints**************)
 	clusters=Map[First,
 		Most/@ArrayRules/@Last/@ComponentMeasurements[
-			Dilation[Image@SparseArray[Thread[Round@endpoints->1],Reverse@ImageDimensions@bin],1,Padding->0],"Mask"]
+			Dilation[Image@SparseArray[Thread[Round@endpoints->1],Reverse@ImageDimensions@bin],If[objectsize>10,1,0],Padding->0],"Mask"]
 			,{2}];
 	
 	Sow@First@AbsoluteTiming[
@@ -449,7 +454,8 @@ SegmentationButler[assoc_]:=Module[{originalDim,objSize,preferredObjectSize,imgR
 								If[KeyExistsQ[assoc,"includeBorderObjects"],assoc["includeBorderObjects"],True],
 								If[KeyExistsQ[assoc,"DEBUG"],assoc["DEBUG"],False],
 								If[KeyExistsQ[assoc,"upsample"],assoc["upsample"],True],
-								If[KeyExistsQ[assoc,"morphoBinFac"],assoc["morphoBinFac"],1]]|>]]};
+								If[KeyExistsQ[assoc,"morphoBinFac"],assoc["morphoBinFac"],1],
+								If[KeyExistsQ[assoc,"thresholdFlow"],assoc["thresholdFlow"],False]]|>]]};
 		out]
 		,
 		Print@"not enough input given!";
