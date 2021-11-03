@@ -219,9 +219,9 @@ segmentPmapWithGradients[img_,out_,objectsize_,binThreshold_:0.5,borderObjects_:
 	pixels=First/@Most[ArrayRules@ImageData@bin];];
 	If[Length@pixels>0,
 	(***************GRADIENT ASCEND ALGORITHM******************)
-	Sow@First@AbsoluteTiming[
+	Sow@{"gradascend",First@AbsoluteTiming[
 	findCenters=compileGradientAscentAlgo[gradMap,(2*2*objectsize)];
-	endpoints=findCenters@pixels;];
+	endpoints=findCenters@pixels;]};
 	(******************************************************)
 	
 	(************Cluster gradient ascent endpoints**************)
